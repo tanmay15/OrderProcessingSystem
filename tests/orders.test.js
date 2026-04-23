@@ -131,6 +131,17 @@ describe('PATCH /updateOrder', () => {
     expect(res.status).toBe(404);
   });
 
+  test('status can be set to CANCELLED via updateOrder', async () => {
+    const order = await createOrder();
+
+    const res = await request(app)
+      .patch('/updateOrder')
+      .send({ id: order.id, status: 'CANCELLED' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.order.status).toBe('CANCELLED');
+  });
+
   test('invalid status value → 400', async () => {
     const order = await createOrder();
 

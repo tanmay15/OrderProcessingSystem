@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 const orderRoutes = require('./controllers/ordersController');
 const errorHandler = require('./middleware/errorHandler');
 const app = express();
@@ -8,6 +10,9 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'OK', timestamp: new Date().toISOString() }));
+
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes – Business logic
 app.use('/', orderRoutes);

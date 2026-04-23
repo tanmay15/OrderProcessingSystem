@@ -1,3 +1,6 @@
 node_modules/
-.env
-.env.test
+
+# .env and .env.test are intentionally committed so the reviewer can run the project without any setup.
+# In a real production repository, these files would be git-ignored and secrets managed via
+# a secrets manager (e.g. AWS Secrets Manager) or CI/CD environment variables.
+

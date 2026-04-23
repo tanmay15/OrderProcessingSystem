@@ -1,0 +1,16 @@
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    command: node src/app.js
+
+  worker:
+    build: .
+    env_file:
+      - .env
+    command: node src/workers/orderStatusUpdateCron.js
+    depends_on:
+      - api

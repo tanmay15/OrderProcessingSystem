@@ -13,7 +13,9 @@ A RESTful backend for an E-commerce Order Processing System built with **Express
 - [Database Schema](#database-schema)
 - [Running the Server](#running-the-server)
 - [Running the Background Worker](#running-the-background-worker)
+- [Running with Docker](#running-with-docker)
 - [Running Tests](#running-tests)
+- [Swagger UI](#swagger-ui)
 - [API Reference](#api-reference)
 
 ---
@@ -81,21 +83,23 @@ HTTP Request
 
 ## Environment Setup
 
-Create a `.env` file in the project root:
+Both `.env` and `.env.test` are **committed to this repository** so the reviewer can run the project immediately with no additional setup. The databases are hosted on [Neon](https://neon.tech) serverless Postgres and are already live.
+
+> In a real production repository these files would be git-ignored and secrets would be managed via a secrets manager (e.g. AWS Secrets Manager) or CI/CD environment variables.
+
+If you ever need to point the project at your own databases, the format is:
 
 ```env
-DATABASE_URL=your_production_postgres_connection_string
+# .env  (API server + worker)
+DATABASE_URL=postgresql://<user>:<password>@<host>/<db>?sslmode=verify-full
 PORT=3000
 ```
 
-Create a `.env.test` file for running tests (uses a separate database so test data never touches production):
-
 ```env
-DATABASE_URL=your_test_postgres_connection_string
+# .env.test  (Jest integration tests — use a separate DB so test data never touches production)
+DATABASE_URL=postgresql://<user>:<password>@<host>/<db>?sslmode=verify-full
 PORT=3000
 ```
-
-Both files are git-ignored.
 
 ---
 
@@ -185,6 +189,32 @@ The worker verifies the DB connection on startup and handles graceful shutdown o
 
 ---
 
+## Running with Docker
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) to be running.
+
+Both the API and the worker share the same image. The `docker-compose.yml` spins them up as two separate containers, each reading the same `.env` file for the database connection string.
+
+```bash
+# Build the image and start both containers
+docker compose up --build
+
+# Run in detached (background) mode
+docker compose up --build -d
+
+# Stop and remove containers
+docker compose down
+```
+
+| Container | Command | Port |
+|-----------|---------|------|
+| `api`     | `node src/app.js` | `3000` |
+| `worker`  | `node src/workers/orderStatusUpdateCron.js` | — |
+
+> The `.env` file must exist locally before running — it is intentionally excluded from the Docker image (`.dockerignore`) so secrets are never baked in.
+
+---
+
 ## Running Tests
 
 Tests run against the **test database** defined in `.env.test` — production data is never touched.  
@@ -197,6 +227,19 @@ npm test
 # Run with coverage report
 npm run test:coverage
 ```
+
+---
+
+## Swagger UI
+
+An interactive API explorer is available once the server is running.
+
+| Mode | URL |
+|------|-----|
+| Local / npm | http://localhost:3000/api-docs |
+| Docker | http://localhost:3000/api-docs |
+
+Open it in a browser to browse all endpoints, see request/response schemas, and execute live requests directly from the UI — no Postman or curl required.
 
 ---
 
@@ -307,7 +350,8 @@ curl -X PATCH http://localhost:3000/updateOrder \
   -d "{\"id\": \"550e8400-e29b-41d4-a716-446655440000\", \"status\": \"SHIPPED\"}"
 ```
 
-Valid status values: `PENDING`, `PROCESSING`, `SHIPPED`, `DELIVERED`
+Valid status values: `PENDING`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `CANCELLED`  
+No transition restrictions — any status can be set to any other status via this endpoint.
 
 **Response `200`:**
 ```json
