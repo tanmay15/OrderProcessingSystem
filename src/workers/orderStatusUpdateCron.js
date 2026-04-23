@@ -31,6 +31,12 @@ async function runJob() {
   console.log(`[Worker] Job started at ${startedAt}`);
 
   try {
+    // Promotes ALL currently PENDING orders in one shot as per the requirement specified.
+    // The cron job fires every 5 minutes, so in practice an order can spend
+    // anywhere from ~0 seconds (created just before the job fires) to just
+    // under 10 minutes (created just after a run) in PENDING state.
+    // A stricter interpretation — each order waits exactly 5 minutes from its
+    // own createdAt — would add: AND created_at <= NOW() - INTERVAL '5 minutes'
     const count = await promotePendingOrders();
     if (count > 0) {
       console.log(`[Worker] Promoted ${count} PENDING order(s) to PROCESSING.`);
